@@ -55,10 +55,12 @@ export const config = {
      * Match all request paths except for:
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files (e.g. /images, /fonts)
      * - .well-known folder files (e.g. /jwks.json)
+     * - any path containing a "." — i.e. static files in /public such as the
+     *   PWA manifest, service worker, and icons. The browser fetches these
+     *   WITHOUT the session cookie, so they must not hit the auth redirect or
+     *   the app stops being installable (manifest/SW/icons 307 -> /login).
      */
-    "/((?!_next/static|_next/image|favicon.ico|\\.well-known/.*).*)",
+    "/((?!_next/static|_next/image|.*\\..*|\\.well-known/.*).*)",
   ],
 };

@@ -70,7 +70,7 @@ export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
               variant="ghost"
               size="icon-sm"
               aria-label="Change date"
-              className="size-6 text-muted-foreground"
+              className="size-6 text-muted-foreground ml-2"
             />
           }
         >
@@ -91,7 +91,7 @@ export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
         </PopoverContent>
       </Popover>
 
-      <div className="flex items-center gap-1 px-2">
+      <div className="flex items-center gap-1 pr-2">
         <TimePicker
           value={minutesOfDay(slot.start)}
           onChange={(minutes) => onUpdate({ start: withMinutesOfDay(slot.start, minutes) })}
