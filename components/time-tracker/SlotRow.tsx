@@ -1,12 +1,22 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { CalendarDays, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimePicker } from "@/components/ui/time-picker";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { formatDuration, minutesOfDay, slotDuration, withMinutesOfDay } from "@/lib/time";
+import {
+  addDays,
+  daysBetween,
+  formatDuration,
+  minutesOfDay,
+  slotDuration,
+  startOfDay,
+  withMinutesOfDay,
+} from "@/lib/time";
 
 export interface SlotRowProps {
   slot: Doc<"timeSlots">;
@@ -17,6 +27,7 @@ export interface SlotRowProps {
 
 export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
   const [name, setName] = useState(slot.name ?? "");
+  const [dateOpen, setDateOpen] = useState(false);
   const running = slot.end === undefined;
 
   // Keep the local name in sync when the underlying slot changes (e.g. from
@@ -27,6 +38,16 @@ export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
 
   const commitName = () => {
     if ((slot.name ?? "") !== name) onUpdate({ name });
+  };
+
+  // Move the slot to another day, keeping its time-of-day and duration.
+  const handleDateChange = (dayStart: number) => {
+    const delta = daysBetween(slot.start, dayStart);
+    if (delta === 0) return;
+    onUpdate({
+      start: addDays(slot.start, delta),
+      ...(slot.end !== undefined ? { end: addDays(slot.end, delta) } : {}),
+    });
   };
 
   return (
@@ -41,6 +62,34 @@ export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
         }}
         className="h-9 min-w-0 flex-1 basis-full sm:basis-40 bg-transparent! text-sm"
       />
+
+      <Popover open={dateOpen} onOpenChange={setDateOpen}>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Change date"
+              className="size-6 text-muted-foreground"
+            />
+          }
+        >
+          <CalendarDays className="size-4" />
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            required
+            weekStartsOn={1}
+            selected={new Date(slot.start)}
+            onSelect={(d) => {
+              handleDateChange(startOfDay(d.getTime()));
+              setDateOpen(false);
+            }}
+            disabled={{ after: new Date() }}
+          />
+        </PopoverContent>
+      </Popover>
 
       <div className="flex items-center gap-1 px-2">
         <TimePicker

@@ -1,17 +1,19 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { LogOut, Pause, Play } from "lucide-react";
+import { History, LogOut, Pause, Play } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@/components/context/UserContext";
 import { SlotRow } from "@/components/time-tracker/SlotRow";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TimePicker } from "@/components/ui/time-picker";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { logout } from "@/server/auth";
+import { cn } from "@/lib/utils";
 import {
   formatDuration,
   formatStopwatch,
@@ -83,15 +85,27 @@ export default function Home() {
           <h1 className="text-xl font-semibold tracking-tight font-mono">time-tracker</h1>
           {user?.name && <p className="text-sm text-muted-foreground">{user.name}</p>}
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Log out"
-          onClick={() => logout()}
-          className="text-muted-foreground"
-        >
-          <LogOut className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/history"
+            aria-label="History"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon-sm" }),
+              "text-muted-foreground",
+            )}
+          >
+            <History className="size-4" />
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Log out"
+            onClick={() => logout()}
+            className="text-muted-foreground"
+          >
+            <LogOut className="size-4" />
+          </Button>
+        </div>
       </header>
 
       {/* Hero: current slot */}
@@ -118,9 +132,7 @@ export default function Home() {
         <div className="flex flex-col sm:gap-3 gap-2 sm:flex-row sm:items-center">
           {running && (
             <div className="flex sm:flex-1 justify-center items-center gap-2 dark:bg-input/30 rounded-md bg-background">
-              <span className="text-sm font-medium text-muted-foreground">
-                Start Time:
-              </span>
+              <span className="text-sm font-medium text-muted-foreground">Start Time:</span>
               <TimePicker
                 variant="ghost"
                 value={minutesOfDay(running.start)}
@@ -154,13 +166,17 @@ export default function Home() {
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl bg-card p-4 text-card-foreground shadow-xs ring-1 ring-foreground/10">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Today</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums font-mono">{formatDuration(todayTotal)}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums font-mono">
+            {formatDuration(todayTotal)}
+          </p>
         </div>
         <div className="rounded-xl bg-card p-4 text-card-foreground shadow-xs ring-1 ring-foreground/10">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             This week
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums font-mono">{formatDuration(weekTotal)}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums font-mono">
+            {formatDuration(weekTotal)}
+          </p>
         </div>
       </div>
 

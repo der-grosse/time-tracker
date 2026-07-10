@@ -29,9 +29,7 @@ function useJWTAuth() {
 
   const fetchAccessToken = useCallback(
     async ({ forceRefreshToken }: { forceRefreshToken?: boolean } = {}) => {
-      console.log("Fetching access token, forceRefreshToken:", forceRefreshToken);
       if (!forceRefreshToken && tokenRef.current) {
-        console.log("Returning cached token:", tokenRef.current);
         return tokenRef.current;
       }
 
@@ -42,7 +40,6 @@ function useJWTAuth() {
         Date.now() - lastTokenUpdate.current.getTime() < 30 * 1000 &&
         tokenRef.current
       ) {
-        console.log("Returning recently updated token:", tokenRef.current);
         return tokenRef.current;
       }
 
@@ -69,7 +66,6 @@ function useJWTAuth() {
           setIsAuthenticated(true);
         }
         lastTokenUpdate.current = new Date();
-        console.log("Fetched new token:", payload.token);
         return payload.token;
       } catch (error) {
         console.error("Error fetching auth token:", error);
@@ -77,7 +73,6 @@ function useJWTAuth() {
         if (mountedRef.current) {
           setIsAuthenticated(false);
         }
-        console.log("Returning undefined token due to error");
         throw error;
       } finally {
         if (mountedRef.current) {
@@ -94,7 +89,6 @@ function useJWTAuth() {
     });
   }, [fetchAccessToken]);
 
-  console.log("useJWTAuth state:", { isLoading, isAuthenticated });
 
   return useMemo(
     () => ({

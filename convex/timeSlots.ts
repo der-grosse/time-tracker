@@ -46,6 +46,19 @@ export const list = query({
   },
 });
 
+/** Every slot for the current user, newest first — used by the history page. */
+export const listAll = query({
+  args: {},
+  async handler(ctx) {
+    const user = await requireUser(ctx);
+    const slots = await ctx.db
+      .query("timeSlots")
+      .withIndex("byUser", (q) => q.eq("userId", user._id))
+      .collect();
+    return slots.sort((a, b) => b.start - a.start);
+  },
+});
+
 /** Start a new running slot, closing any slot that is already running. */
 export const start = mutation({
   args: { name: v.optional(v.string()) },
@@ -62,6 +75,27 @@ export const start = mutation({
       userId: user._id,
       name: name?.trim() ? name.trim() : undefined,
       start: now,
+    });
+  },
+});
+
+/** Manually add a completed slot (e.g. backfilling a past day). */
+export const create = mutation({
+  args: {
+    name: v.optional(v.string()),
+    start: v.number(),
+    end: v.number(),
+  },
+  async handler(ctx, { name, start, end }) {
+    const user = await requireUser(ctx);
+    if (end < start) {
+      throw new Error("End time must be after start time");
+    }
+    return await ctx.db.insert("timeSlots", {
+      userId: user._id,
+      name: name?.trim() ? name.trim() : undefined,
+      start,
+      end,
     });
   },
 });
