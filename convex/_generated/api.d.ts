@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as self from "../self.js";
+import type * as timeSlots from "../timeSlots.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +21,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   self: typeof self;
+  timeSlots: typeof timeSlots;
 }>;
 
 /**

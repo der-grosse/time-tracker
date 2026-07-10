@@ -1,65 +1,195 @@
-import Image from "next/image";
+"use client";
+
+import { useMutation, useQuery } from "convex/react";
+import { LogOut, Pause, Play } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useUser } from "@/components/context/UserContext";
+import { SlotRow } from "@/components/time-tracker/SlotRow";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TimePicker } from "@/components/ui/time-picker";
+import { api } from "@/convex/_generated/api";
+import type { Doc } from "@/convex/_generated/dataModel";
+import { logout } from "@/server/auth";
+import {
+  formatDuration,
+  formatStopwatch,
+  minutesOfDay,
+  startOfDay,
+  startOfWeek,
+  withMinutesOfDay,
+} from "@/lib/time";
+
+/** Duration of a slot within [from, now], clamped so it never counts outside it. */
+function clampedDuration(slot: Doc<"timeSlots">, from: number, now: number): number {
+  const start = Math.max(slot.start, from);
+  const end = slot.end ?? now;
+  return Math.max(0, end - start);
+}
 
 export default function Home() {
+  const { user } = useUser();
+  const [now, setNow] = useState(() => Date.now());
+
+  // Tick every second so the running timer and totals stay live.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const weekStart = startOfWeek(now);
+  const dayStart = startOfDay(now);
+
+  const slots = useQuery(api.timeSlots.list, { since: weekStart });
+  const start = useMutation(api.timeSlots.start);
+  const stop = useMutation(api.timeSlots.stop);
+  const update = useMutation(api.timeSlots.update);
+  const remove = useMutation(api.timeSlots.remove);
+
+  const running = useMemo(() => slots?.find((s) => s.end === undefined) ?? null, [slots]);
+
+  // Slots that started today and have already ended (running one lives in the hero).
+  const todaysCompleted = useMemo(
+    () => (slots ?? []).filter((s) => s.end !== undefined && s.start >= dayStart),
+    [slots, dayStart],
+  );
+
+  const weekTotal = (slots ?? []).reduce((sum, s) => sum + clampedDuration(s, weekStart, now), 0);
+  const todayTotal = (slots ?? []).reduce((sum, s) => sum + clampedDuration(s, dayStart, now), 0);
+
+  // Name input for the hero — the pending name when idle, the running slot's name when tracking.
+  const [nameInput, setNameInput] = useState("");
+  useEffect(() => {
+    setNameInput(running?.name ?? "");
+  }, [running?._id]);
+
+  const handleStart = async () => {
+    const name = nameInput;
+    setNameInput("");
+    await start({ name: name.trim() ? name.trim() : undefined });
+  };
+
+  const commitRunningName = () => {
+    if (running && (running.name ?? "") !== nameInput) {
+      update({ id: running._id, name: nameInput });
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:py-10">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight font-mono">time-tracker</h1>
+          {user?.name && <p className="text-sm text-muted-foreground">{user.name}</p>}
+        </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Log out"
+          onClick={() => logout()}
+          className="text-muted-foreground"
+        >
+          <LogOut className="size-4" />
+        </Button>
+      </header>
+
+      {/* Hero: current slot */}
+      <div className="rounded-xl bg-card p-6 text-card-foreground shadow-xs ring-1 ring-foreground/10 relative space-y-2">
+        <div
+          className="font-mono text-lg text-center font-medium tabular-nums text-muted-foreground"
+          data-running={!!running}
+        >
+          {running ? formatStopwatch(Math.max(0, now - running.start)) : "00:00:00"}
+        </div>
+
+        <Input
+          value={nameInput}
+          placeholder="What are you working on?"
+          onChange={(e) => setNameInput(e.target.value)}
+          onBlur={running ? commitRunningName : undefined}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            if (running) e.currentTarget.blur();
+            else handleStart();
+          }}
+          className="h-11 flex-1 sm:text-left text-center"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+        <div className="flex flex-col sm:gap-3 gap-2 sm:flex-row sm:items-center">
+          {running && (
+            <div className="flex sm:flex-1 justify-center items-center gap-2 dark:bg-input/30 rounded-md bg-background">
+              <span className="text-sm font-medium text-muted-foreground">
+                Start Time:
+              </span>
+              <TimePicker
+                variant="ghost"
+                value={minutesOfDay(running.start)}
+                onChange={(minutes) =>
+                  update({ id: running._id, start: withMinutesOfDay(running.start, minutes) })
+                }
+                className="h-11"
+              />
+            </div>
+          )}
+          {running ? (
+            <Button
+              size="lg"
+              variant="destructive"
+              className="h-11 sm:flex-1"
+              onClick={() => stop({})}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              <Pause className="size-4" />
+              Stop
+            </Button>
+          ) : (
+            <Button size="lg" className="h-11 w-full" onClick={handleStart}>
+              <Play className="size-4" />
+              Start
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Totals */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-xl bg-card p-4 text-card-foreground shadow-xs ring-1 ring-foreground/10">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Today</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums font-mono">{formatDuration(todayTotal)}</p>
+        </div>
+        <div className="rounded-xl bg-card p-4 text-card-foreground shadow-xs ring-1 ring-foreground/10">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            This week
           </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums font-mono">{formatDuration(weekTotal)}</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+
+      {/* Today's slots */}
+      <section>
+        <h2 className="mb-1 text-sm font-medium text-muted-foreground">Today</h2>
+        {slots === undefined ? (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : todaysCompleted.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No finished time slots yet today.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {todaysCompleted.map((slot) => (
+              <SlotRow
+                key={slot._id}
+                slot={slot}
+                now={now}
+                onUpdate={(patch) => update({ id: slot._id, ...patch })}
+                onRemove={() => remove({ id: slot._id })}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

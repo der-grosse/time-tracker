@@ -1,12 +1,11 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { Clock } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const timePickerVariants = cva(
-  "flex items-center gap-0.5 h-9 rounded-md px-3 py-1 text-sm transition-[color,box-shadow] outline-none has-[:focus]:ring-ring/50 has-[:focus]:ring-[3px] has-[:focus]:border-ring",
+  "flex items-center gap-1 h-9 rounded-md px-3 py-1 text-sm transition-[color,box-shadow] outline-none has-[:focus]:ring-ring/50 has-[:focus]:ring-[3px] has-[:focus]:border-ring",
   {
     variants: {
       variant: {
@@ -152,16 +151,12 @@ function TimePicker({ value, onChange, variant, className, disabled, readonly }:
 
   return (
     <div className={cn(timePickerVariants({ variant }), className)}>
-      <Clock
-        className="size-3.5 shrink-0 text-muted-foreground"
-        onClick={() => hourRef.current?.focus()}
-      />
       <input
         ref={hourRef}
         type="text"
         inputMode="numeric"
         disabled={disabled}
-        className="w-5 bg-transparent text-center outline-none select-all tabular-nums disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-5 bg-transparent text-center outline-none select-all tabular-nums disabled:cursor-not-allowed disabled:opacity-50 font-mono"
         value={hourInput ?? padTwo(hours)}
         onChange={handleHourChange}
         onFocus={(e) => e.target.select()}
@@ -175,7 +170,7 @@ function TimePicker({ value, onChange, variant, className, disabled, readonly }:
         type="text"
         inputMode="numeric"
         disabled={disabled}
-        className="w-5 bg-transparent text-center outline-none select-all tabular-nums disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-5 bg-transparent text-center outline-none select-all tabular-nums disabled:cursor-not-allowed disabled:opacity-50 font-mono"
         value={minuteInput ?? padTwo(minutes)}
         onChange={handleMinuteChange}
         onFocus={(e) => e.target.select()}
