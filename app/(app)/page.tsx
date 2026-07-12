@@ -51,6 +51,7 @@ export default function Home() {
 
   const running = useMemo(() => slots?.find((s) => s.end === undefined) ?? null, [slots]);
   const isRunning = !!running;
+  const isLoaded = !!slots;
 
   // Reflect the running slot's elapsed time in the tab title.
   useEffect(() => {
@@ -135,56 +136,66 @@ export default function Home() {
 
       {/* Hero: current slot */}
       <div className="rounded-xl bg-card p-6 text-card-foreground shadow-xs ring-1 ring-foreground/10 relative space-y-2">
-        <div
-          className="font-mono text-lg text-center font-medium tabular-nums text-muted-foreground"
-          data-running={!!running}
-        >
-          {running ? formatStopwatch(Math.max(0, now - running.start)) : "00:00:00"}
-        </div>
-
-        <Input
-          value={nameInput}
-          placeholder="What are you working on?"
-          onChange={(e) => setNameInput(e.target.value)}
-          onBlur={running ? commitRunningName : undefined}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            if (running) e.currentTarget.blur();
-            else handleStart();
-          }}
-          className="h-11 flex-1 sm:text-left text-center"
-        />
-        <div className="flex flex-col sm:gap-3 gap-2 sm:flex-row sm:items-center">
-          {running && (
-            <div className="flex sm:flex-1 justify-center items-center gap-2 dark:bg-input/30 rounded-md bg-background">
-              <span className="text-sm font-medium text-muted-foreground">Start Time:</span>
-              <TimePicker
-                variant="ghost"
-                value={minutesOfDay(running.start)}
-                onChange={(minutes) =>
-                  update({ id: running._id, start: withMinutesOfDay(running.start, minutes) })
-                }
-                className="h-11"
-              />
-            </div>
-          )}
-          {running ? (
-            <Button
-              size="lg"
-              variant="destructive"
-              className="h-11 sm:flex-1"
-              onClick={() => stop({})}
+        {!isLoaded ? (
+          <>
+            <Skeleton className="h-7" />
+            <Skeleton className="h-11" />
+            <Skeleton className="h-11" />
+          </>
+        ) : (
+          <>
+            <div
+              className="font-mono text-lg text-center font-medium tabular-nums text-muted-foreground"
+              data-running={!!running}
             >
-              <Pause className="size-4" />
-              Stop
-            </Button>
-          ) : (
-            <Button size="lg" className="h-11 w-full" onClick={handleStart}>
-              <Play className="size-4" />
-              Start
-            </Button>
-          )}
-        </div>
+              {running ? formatStopwatch(Math.max(0, now - running.start)) : "00:00:00"}
+            </div>
+            <Input
+              value={nameInput}
+              placeholder="What are you working on?"
+              onChange={(e) => setNameInput(e.target.value)}
+              onBlur={running ? commitRunningName : undefined}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                if (running) e.currentTarget.blur();
+                else handleStart();
+              }}
+              className="h-11 flex-1 sm:text-left text-center"
+            />
+            <div className="flex flex-col sm:gap-3 gap-2 sm:flex-row sm:items-center">
+              {running && (
+                <div className="flex sm:flex-1 justify-center items-center gap-2 dark:bg-input/30 rounded-md bg-background">
+                  <span className="text-sm font-medium text-muted-foreground">Start Time:</span>
+                  <TimePicker
+                    variant="ghost"
+                    value={minutesOfDay(running.start)}
+                    onChange={(minutes) =>
+                      update({ id: running._id, start: withMinutesOfDay(running.start, minutes) })
+                    }
+                    className="h-11"
+                  />
+                </div>
+              )}
+              {running ? (
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  className="h-11 sm:flex-1"
+                  onClick={() => stop({})}
+                  key="stop"
+                >
+                  <Pause className="size-4" />
+                  Stop
+                </Button>
+              ) : (
+                <Button size="lg" className="h-11 w-full" onClick={handleStart} key="start">
+                  <Play className="size-4" />
+                  Start
+                </Button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Totals */}

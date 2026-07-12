@@ -59,11 +59,10 @@ export function formatWeekRange(weekStart: number): string {
   const end = new Date(weekStart);
   end.setDate(end.getDate() + 6);
 
-  const sameMonth = start.getMonth() === end.getMonth();
   const sameYear = start.getFullYear() === end.getFullYear();
   const startFmt = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const endFmt = end.toLocaleDateString(undefined, {
-    month: sameMonth ? undefined : "short",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
