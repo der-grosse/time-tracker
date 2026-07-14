@@ -60,7 +60,7 @@ export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        className="h-9 min-w-0 flex-1 basis-full sm:basis-40 bg-transparent! text-sm"
+        className="h-9 min-w-0 flex-1 basis-full sm:basis-40 bg-transparent! text-sm -mr-3"
       />
 
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
