@@ -125,7 +125,7 @@ export function SlotRow({ slot, now, onUpdate, onRemove }: SlotRowProps) {
           />
           <span className="text-muted-foreground">-</span>
           {running ? (
-            <span className="px-0.5 text-sm font-medium text-primary">now</span>
+            <span className="px-0.5 text-sm font-medium text-primary w-13 text-center">now</span>
           ) : (
             <TimePicker
               value={minutesOfDay(slot.end!)}

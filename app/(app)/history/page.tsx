@@ -103,20 +103,19 @@ export default function HistoryPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:py-10">
-      <header className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            aria-label="Back to tracker"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon-sm" }),
-              "text-muted-foreground",
-            )}
-          >
-            <ChevronLeft className="size-4" />
-          </Link>
-          <h1 className="text-xl font-semibold tracking-tight">History</h1>
-        </div>
+      <header className="flex items-center">
+        <Link
+          href="/"
+          aria-label="Back to tracker"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon-sm" }),
+            "text-muted-foreground -ml-2",
+          )}
+        >
+          <ChevronLeft className="size-4" />
+        </Link>
+        <h1 className="text-xl font-semibold tracking-tight">History</h1>
+        <div className="grow mr-2" />
         <AddSlotDialog />
       </header>
 

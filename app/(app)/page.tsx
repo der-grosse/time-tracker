@@ -22,6 +22,7 @@ import {
   startOfWeek,
   withMinutesOfDay,
 } from "@/lib/time";
+import { useNow } from "@/components/hooks/useNow";
 
 /** Duration of a slot within [from, now], clamped so it never counts outside it. */
 function clampedDuration(slot: Doc<"timeSlots">, from: number, now: number): number {
@@ -32,13 +33,7 @@ function clampedDuration(slot: Doc<"timeSlots">, from: number, now: number): num
 
 export default function Home() {
   const { user } = useUser();
-  const [now, setNow] = useState(() => Date.now());
-
-  // Tick every second so the running timer and totals stay live.
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useNow();
 
   const weekStart = startOfWeek(now);
   const dayStart = startOfDay(now);
@@ -50,32 +45,7 @@ export default function Home() {
   const remove = useMutation(api.timeSlots.remove);
 
   const running = useMemo(() => slots?.find((s) => s.end === undefined) ?? null, [slots]);
-  const isRunning = !!running;
   const isLoaded = !!slots;
-
-  // Reflect the running slot's elapsed time in the tab title.
-  useEffect(() => {
-    document.title = running
-      ? `${formatDuration(Math.max(0, now - running.start))} · time-tracker`
-      : "time-tracker";
-    return () => {
-      document.title = "time-tracker";
-    };
-  }, [running, now]);
-
-  // Swap the favicon while a slot is running.
-  useEffect(() => {
-    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      document.head.appendChild(link);
-    }
-    link.href = isRunning ? "/favicon_active.ico" : "/favicon.ico";
-    return () => {
-      if (link) link.href = "/favicon.ico";
-    };
-  }, [isRunning]);
 
   // Slots that started today and have already ended (running one lives in the hero).
   const todaysCompleted = useMemo(

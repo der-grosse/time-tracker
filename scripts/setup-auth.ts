@@ -2,6 +2,7 @@ import * as jwt from "jose";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as dotenv from "dotenv";
+import { execFileSync } from "child_process";
 
 // Load environment variables
 dotenv.config();
@@ -100,6 +101,11 @@ async function setupAuth() {
     envContents = setEnvValue(envContents, "SERVER_JWT", serverJwtValue);
 
     await fs.writeFile(envPath, envContents, { encoding: "utf8" });
+
+    execFileSync("convex", ["env", "set", "JWT_PUBLIC_JWKS", jwksValue], {
+      stdio: "inherit",
+      shell: true,
+    });
 
     console.log("----------------------------------------");
     console.log("✅ Auth setup complete!");
